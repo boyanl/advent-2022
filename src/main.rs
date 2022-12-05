@@ -8,22 +8,63 @@ struct Move {
     amount: usize,
 }
 
-type Stack = Vec<char>;
+struct Stack {
+    data: Vec<u8>,
+    top: usize,
+}
 
-fn read_input() -> (Vec<Stack>, Vec<Move>) {
+fn empty_stack() -> Stack {
+    return Stack {
+        data: vec![0u8; 1024 * 1024],
+        top: 0,
+    };
+}
+
+fn push(s: &mut Stack, val: u8) {
+    s.data[s.top] = val;
+    s.top += 1;
+}
+
+fn pop(s: &mut Stack) -> u8 {
+    let result = s.data[s.top - 1];
+    s.top -= 1;
+    return result;
+}
+
+type Stacks = [Stack; 9];
+
+fn print_stack(s: &Stack) {
+    for i in 0..s.top {
+        println!("{}", s.data[i] as char);
+    }
+}
+
+fn read_input() -> (Stacks, usize, Vec<Move>) {
     let mut read_stacks = false;
     let mut moves = Vec::new();
-    let mut stacks = Vec::new();
+
+    let mut stacks: Stacks = [
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+        empty_stack(),
+    ];
+    let mut stacks_cnt = 0;
     for line in io::stdin().lines().map(|l| l.unwrap()) {
         if !read_stacks {
             for i in 0..(line.len() + 1) / 4 {
                 let stack = line[i * 4..i * 4 + 3].trim();
                 let mut c: char = ' ';
                 if sscanf!(stack, "[{}]", c).is_ok() {
-                    if stacks.len() <= i {
-                        stacks.resize(i + 1, Vec::new());
+                    if stacks_cnt <= i {
+                        stacks_cnt = i + 1;
                     }
-                    stacks[i].insert(0, c);
+                    push(&mut stacks[i], c as u8);
                 } else if stack.len() > 0 && stack.chars().nth(0).unwrap() == '1' {
                     read_stacks = true;
                     break;
@@ -42,49 +83,55 @@ fn read_input() -> (Vec<Stack>, Vec<Move>) {
         }
     }
 
-    return (stacks, moves);
+    for i in 0..stacks_cnt {
+        let len = stacks[i].top;
+        for j in 0..len / 2 {
+            let tmp = stacks[i].data[j];
+            stacks[i].data[j] = stacks[i].data[len - j - 1];
+            stacks[i].data[len - j - 1] = tmp;
+        }
+    }
+
+    return (stacks, stacks_cnt, moves);
 }
 
 fn part_one() {
-    let (mut stacks, moves) = read_input();
+    let (mut stacks, stacks_cnt, moves) = read_input();
     for m in moves {
         for _ in 0..m.amount {
             let (from, to) = ((m.from - 1) as usize, (m.to - 1) as usize);
-            let element = stacks[from].pop().unwrap();
-            stacks[to].push(element);
+            let element = pop(&mut stacks[from]);
+            push(&mut stacks[to], element);
         }
     }
 
     let mut result = String::new();
-    for stack in &stacks {
-        if stack.len() > 0 {
-            result.push(*stack.last().unwrap())
+    for i in 0..stacks_cnt {
+        if stacks[i].top > 0 {
+            result.push(stacks[i].data[stacks[i].top - 1] as char);
         }
     }
     println!("{result}")
 }
 
 fn part_two() {
-    let (mut stacks, moves) = read_input();
+    let (mut stacks, stacks_cnt, moves) = read_input();
 
     for m in moves {
         let (from, to) = ((m.from - 1) as usize, (m.to - 1) as usize);
 
-        let new_src_len = stacks[from].len() - m.amount;
-        let new_dst_len = stacks[to].len() + m.amount;
-        let dst = &mut stacks[to];
-        dst.reserve(new_dst_len);
-        for i in new_src_len..stacks[from].len() {
-            let el = stacks[from][i];
-            stacks[to].push(el);
+        let new_src_len = stacks[from].top - m.amount;
+        for i in new_src_len..stacks[from].top {
+            let el = stacks[from].data[i];
+            push(&mut stacks[to], el);
         }
-        stacks[from].truncate(new_src_len);
+        stacks[from].top = new_src_len;
     }
 
     let mut result = String::new();
-    for stack in &stacks {
-        if stack.len() > 0 {
-            result.push(*stack.last().unwrap())
+    for i in 0..stacks_cnt {
+        if stacks[i].top > 0 {
+            result.push(stacks[i].data[stacks[i].top - 1] as char);
         }
     }
     println!("{result}")
