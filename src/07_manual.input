@@ -1,0 +1,16 @@
+$ cd /
+$ ls
+dir a
+$ cd a
+$ ls
+dir b
+2 f
+$ cd b
+$ ls
+dir c
+$ cd c
+$ ls
+100 somefile
+$ cd ..
+$ cd ..
+$ cd ..

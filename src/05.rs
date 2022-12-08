@@ -8,42 +8,20 @@ struct Move {
     amount: usize,
 }
 
-struct Stack {
-    data: Vec<u8>,
-    top: usize,
-}
-
-fn empty_stack() -> Stack {
-    return Stack {
-        data: vec![0u8; 1024 * 1024],
-        top: 0,
-    };
-}
-
-fn push(s: &mut Stack, val: u8) {
-    s.data[s.top] = val;
-    s.top += 1;
-}
-
-fn pop(s: &mut Stack) -> u8 {
-    let result = s.data[s.top - 1];
-    s.top -= 1;
-    return result;
-}
-
+type Stack = Vec<u8>;
 type Stacks = [Stack; 9];
 
-fn print_stack(s: &Stack) {
-    for i in 0..s.top {
-        println!("{}", s.data[i] as char);
-    }
+fn empty_stack() -> Stack {
+    let mut result = Vec::new();
+    result.reserve(1024 * 1024);
+    return result;
 }
 
 fn read_input() -> (Stacks, usize, Vec<Move>) {
     let mut read_stacks = false;
     let mut moves = Vec::new();
 
-    let mut stacks: Stacks = [
+    let mut stacks: [Stack; 9] = [
         empty_stack(),
         empty_stack(),
         empty_stack(),
@@ -64,7 +42,7 @@ fn read_input() -> (Stacks, usize, Vec<Move>) {
                     if stacks_cnt <= i {
                         stacks_cnt = i + 1;
                     }
-                    push(&mut stacks[i], c as u8);
+                    stacks[i].push(c as u8);
                 } else if stack.len() > 0 && stack.chars().nth(0).unwrap() == '1' {
                     read_stacks = true;
                     break;
@@ -84,11 +62,11 @@ fn read_input() -> (Stacks, usize, Vec<Move>) {
     }
 
     for i in 0..stacks_cnt {
-        let len = stacks[i].top;
+        let len = stacks[i].len();
         for j in 0..len / 2 {
-            let tmp = stacks[i].data[j];
-            stacks[i].data[j] = stacks[i].data[len - j - 1];
-            stacks[i].data[len - j - 1] = tmp;
+            let tmp = stacks[i][j];
+            stacks[i][j] = stacks[i][len - j - 1];
+            stacks[i][len - j - 1] = tmp;
         }
     }
 
@@ -100,15 +78,15 @@ fn part_one() {
     for m in moves {
         for _ in 0..m.amount {
             let (from, to) = ((m.from - 1) as usize, (m.to - 1) as usize);
-            let element = pop(&mut stacks[from]);
-            push(&mut stacks[to], element);
+            let element = stacks[from].pop().unwrap();
+            stacks[to].push(element);
         }
     }
 
     let mut result = String::new();
     for i in 0..stacks_cnt {
-        if stacks[i].top > 0 {
-            result.push(stacks[i].data[stacks[i].top - 1] as char);
+        if stacks[i].len() > 0 {
+            result.push(stacks[i][stacks[i].len() - 1] as char);
         }
     }
     println!("{result}")
@@ -120,18 +98,18 @@ fn part_two() {
     for m in moves {
         let (from, to) = ((m.from - 1) as usize, (m.to - 1) as usize);
 
-        let new_src_len = stacks[from].top - m.amount;
-        for i in new_src_len..stacks[from].top {
-            let el = stacks[from].data[i];
-            push(&mut stacks[to], el);
+        let new_src_len = stacks[from].len() - m.amount;
+        for i in new_src_len..stacks[from].len() {
+            let el = stacks[from][i];
+            stacks[to].push(el);
         }
-        stacks[from].top = new_src_len;
+        stacks[from].truncate(new_src_len);
     }
 
     let mut result = String::new();
     for i in 0..stacks_cnt {
-        if stacks[i].top > 0 {
-            result.push(stacks[i].data[stacks[i].top - 1] as char);
+        if stacks[i].len() > 0 {
+            result.push(stacks[i][stacks[i].len() - 1] as char);
         }
     }
     println!("{result}")
