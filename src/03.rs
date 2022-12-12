@@ -1,14 +1,14 @@
+#!/usr/bin/env run-cargo-script
+use std::collections::hash_set::Intersection;
+use std::collections::HashSet;
 use std::hash::{BuildHasher, Hash};
 use std::io;
-use std::collections::HashSet;
-use std::collections::hash_set::Intersection;
-
 
 fn item_types(comparement: &str) -> HashSet<char> {
-    let mut res  : HashSet<char> = HashSet::new();
+    let mut res: HashSet<char> = HashSet::new();
     for c in comparement.chars() {
         res.insert(c);
-    } 
+    }
     return res;
 }
 
@@ -25,7 +25,7 @@ fn part_one() {
         if line.is_empty() {
             continue;
         }
-        let (compartment1, compartment2) = (&line[..line.len()/2], &line[line.len()/2..]);
+        let (compartment1, compartment2) = (&line[..line.len() / 2], &line[line.len() / 2..]);
         let items1 = item_types(compartment1);
         let items2 = item_types(compartment2);
 
@@ -33,11 +33,13 @@ fn part_one() {
             priority_sum += priority(*common_item);
         }
     }
-    
+
     println!("{priority_sum}")
 }
 
-fn into_hash_set<'a, T: Eq + Hash + Copy, S: BuildHasher>(isect: Intersection<'a, T, S>) -> HashSet<T> {
+fn into_hash_set<'a, T: Eq + Hash + Copy, S: BuildHasher>(
+    isect: Intersection<'a, T, S>,
+) -> HashSet<T> {
     let mut result = HashSet::new();
     for el in isect {
         result.insert(*el);
@@ -46,9 +48,12 @@ fn into_hash_set<'a, T: Eq + Hash + Copy, S: BuildHasher>(isect: Intersection<'a
 }
 
 fn common_elements(strs: &[String]) -> HashSet<char> {
-    return strs.iter().map(|l| item_types(l)).reduce(|acc, item| into_hash_set(acc.intersection(&item))).unwrap();
+    return strs
+        .iter()
+        .map(|l| item_types(l))
+        .reduce(|acc, item| into_hash_set(acc.intersection(&item)))
+        .unwrap();
 }
-
 
 fn part_two() {
     let mut lines = Vec::new();
@@ -58,11 +63,14 @@ fn part_two() {
         }
         lines.push(line);
     }
-    
+
     let mut result = 0;
-    for i in 0..lines.len()/3 {
-       let group = &lines[i*3..i*3+3];
-       result += common_elements(group).iter().map(|c| priority(*c)).sum::<u32>();
+    for i in 0..lines.len() / 3 {
+        let group = &lines[i * 3..i * 3 + 3];
+        result += common_elements(group)
+            .iter()
+            .map(|c| priority(*c))
+            .sum::<u32>();
     }
     println!("{result}")
 }

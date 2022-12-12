@@ -1,3 +1,9 @@
+#!/usr/bin/env run-cargo-script
+//! ```cargo
+//! [dependencies]
+//! scanf = "1.2.1"
+//! ```
+extern crate scanf;
 use scanf::sscanf;
 use std::io::{stdin, Read};
 

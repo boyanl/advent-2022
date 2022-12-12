@@ -1,3 +1,4 @@
+#!/usr/bin/env run-cargo-script
 use std::io::{self, stdin};
 
 fn in_bounds(pos: (i32, i32), heights: &Vec<Vec<u32>>) -> bool {

@@ -1,3 +1,4 @@
+#!/usr/bin/env run-cargo-script
 use self::Op::{Addx, Noop};
 use std::io::{self, stdin};
 

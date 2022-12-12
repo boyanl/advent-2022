@@ -1,3 +1,4 @@
+#!/usr/bin/env run-cargo-script
 use std::collections::HashMap;
 use std::io;
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env run-cargo-script
 use std::{
     collections::{HashSet, VecDeque},
     io::{self, stdin},
