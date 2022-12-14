@@ -5,13 +5,40 @@ use std::io::{self, stdin};
 mod util;
 pub use util::vec2::Point2;
 
-fn sign(x: i32) -> i32 {
-    if x > 0 {
-        return 1;
-    } else if x == 0 {
-        return 0;
+type Path = Vec<Point2>;
+
+fn read_paths() -> Vec<Path> {
+    let mut result = Vec::new();
+
+    for line in stdin().lines().map(|l| l.unwrap()) {
+        let mut path = Vec::new();
+        for part in line.split(" -> ") {
+            let coords_vec: Vec<i32> = part.split(",").map(|p| p.parse::<i32>().unwrap()).collect();
+            path.push(Point2 {
+                x: coords_vec[0],
+                y: coords_vec[1],
+            });
+        }
+        result.push(path);
     }
-    return -1;
+    return result;
+}
+
+fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point2> {
+    let mut result = HashSet::new();
+    for p in paths {
+        for i in 0..p.len() - 1 {
+            let (prev, curr) = (p[i], p[i + 1]);
+
+            for x in min(prev.x, curr.x)..=max(prev.x, curr.x) {
+                for y in min(prev.y, curr.y)..=max(prev.y, curr.y) {
+                    result.insert(Point2 { x: x, y: y });
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
 fn part_one() {
@@ -60,42 +87,6 @@ fn part_one() {
     println!("{accumulated_sand}");
 }
 
-type Path = Vec<Point2>;
-
-fn read_paths() -> Vec<Path> {
-    let mut result = Vec::new();
-
-    for line in stdin().lines().map(|l| l.unwrap()) {
-        let mut path = Vec::new();
-        for part in line.split(" -> ") {
-            let coords_vec: Vec<i32> = part.split(",").map(|p| p.parse::<i32>().unwrap()).collect();
-            path.push(Point2 {
-                x: coords_vec[0],
-                y: coords_vec[1],
-            });
-        }
-        result.push(path);
-    }
-    return result;
-}
-
-fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point2> {
-    let mut result = HashSet::new();
-    for p in paths {
-        for i in 0..p.len() - 1 {
-            let (prev, curr) = (p[i], p[i + 1]);
-
-            for x in min(prev.x, curr.x)..=max(prev.x, curr.x) {
-                for y in min(prev.y, curr.y)..=max(prev.y, curr.y) {
-                    result.insert(Point2 { x: x, y: y });
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
 fn part_two() {
     let paths = read_paths();
     let mut taken = initialize_rock_positions(&paths);
@@ -135,5 +126,5 @@ fn part_two() {
 }
 
 fn main() {
-    part_one();
+    part_two();
 }
