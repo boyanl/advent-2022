@@ -1,6 +1,9 @@
 use std::cmp::{max, min};
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::io::{self, stdin};
+
+mod util;
+pub use util::vec2::Point2;
 
 fn sign(x: i32) -> i32 {
     if x > 0 {
@@ -12,68 +15,42 @@ fn sign(x: i32) -> i32 {
 }
 
 fn part_one() {
-    let mut taken = HashSet::new();
+    let paths = read_paths();
+    let mut taken = initialize_rock_positions(&paths);
+    let rock_max_y = taken.iter().map(|pt| pt.y).max().unwrap();
 
-    let mut rock_max_y = -1;
+    let src = Point2 { x: 500, y: 0 };
+    let directions = [
+        Point2 { x: 0, y: 1 },
+        Point2 { x: -1, y: 1 },
+        Point2 { x: 1, y: 1 },
+    ];
 
-    for line in stdin().lines().map(|l| l.unwrap()) {
-        let mut prev = (-1, -1);
-        for part in line.split(" -> ") {
-            let coords_vec: Vec<i32> = part.split(",").map(|p| p.parse::<i32>().unwrap()).collect();
-            let (x, y) = (coords_vec[0], coords_vec[1]);
-            if rock_max_y == -1 || rock_max_y < y {
-                rock_max_y = y;
-            }
-
-            if prev.0 == -1 {
-                prev = (x, y);
-                continue;
-            }
-            let (dx, dy) = (sign(x - prev.0), sign(y - prev.1));
-
-            if dx != 0 {
-                for nx in min(prev.0, x)..=max(prev.0, x) {
-                    taken.insert((nx, y));
-                }
-            } else if dy != 0 {
-                for ny in min(prev.1, y)..=max(prev.1, y) {
-                    taken.insert((x, ny));
-                }
-            }
-            prev = (x, y);
-        }
-    }
-
-    let src = (500, 0);
     let mut accumulated_sand = 0;
     let mut flowing_out = false;
     loop {
-        let mut sand_coords = src.clone();
+        let mut sand_coords = src;
         loop {
-            if sand_coords.1 >= rock_max_y {
-                println!("Flowing out! {:?}", sand_coords);
+            if sand_coords.y >= rock_max_y {
                 flowing_out = true;
                 break;
             }
-            let down = (sand_coords.0, sand_coords.1 + 1);
-            if !taken.contains(&down) {
-                sand_coords = down;
-                continue;
+
+            let mut moved = false;
+            for dir in directions {
+                let new_pos = sand_coords + dir;
+                if !taken.contains(&new_pos) {
+                    sand_coords = new_pos;
+                    moved = true;
+                    break;
+                }
             }
-            let down_left = (sand_coords.0 - 1, sand_coords.1 + 1);
-            if !taken.contains(&down_left) {
-                sand_coords = down_left;
-                continue;
+
+            if !moved {
+                taken.insert(sand_coords);
+                accumulated_sand += 1;
+                break;
             }
-            let down_right = (sand_coords.0 + 1, sand_coords.1 + 1);
-            if !taken.contains(&down_right) {
-                sand_coords = down_right;
-                continue;
-            }
-            // all taken, sand remains in place
-            taken.insert(sand_coords);
-            accumulated_sand += 1;
-            break;
         }
         if flowing_out {
             break;
@@ -83,74 +60,74 @@ fn part_one() {
     println!("{accumulated_sand}");
 }
 
-fn part_two() {
-    let mut taken = HashSet::new();
+type Path = Vec<Point2>;
 
-    let mut rock_max_y = -1;
+fn read_paths() -> Vec<Path> {
+    let mut result = Vec::new();
+
     for line in stdin().lines().map(|l| l.unwrap()) {
-        let mut prev = (-1, -1);
+        let mut path = Vec::new();
         for part in line.split(" -> ") {
             let coords_vec: Vec<i32> = part.split(",").map(|p| p.parse::<i32>().unwrap()).collect();
-            let (x, y) = (coords_vec[0], coords_vec[1]);
-            if rock_max_y == -1 || rock_max_y < y {
-                rock_max_y = y;
-            }
+            path.push(Point2 {
+                x: coords_vec[0],
+                y: coords_vec[1],
+            });
+        }
+        result.push(path);
+    }
+    return result;
+}
 
-            if prev.0 == -1 {
-                prev = (x, y);
-                continue;
-            }
-            let (dx, dy) = (sign(x - prev.0), sign(y - prev.1));
+fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point2> {
+    let mut result = HashSet::new();
+    for p in paths {
+        for i in 0..p.len() - 1 {
+            let (prev, curr) = (p[i], p[i + 1]);
 
-            if dx != 0 {
-                for nx in min(prev.0, x)..=max(prev.0, x) {
-                    taken.insert((nx, y));
-                }
-            } else if dy != 0 {
-                for ny in min(prev.1, y)..=max(prev.1, y) {
-                    taken.insert((x, ny));
+            for x in min(prev.x, curr.x)..=max(prev.x, curr.x) {
+                for y in min(prev.y, curr.y)..=max(prev.y, curr.y) {
+                    result.insert(Point2 { x: x, y: y });
                 }
             }
-            prev = (x, y);
         }
     }
 
-    let floor_y = rock_max_y + 2;
-    let is_floor = |pos: (i32, i32)| pos.1 == floor_y;
+    return result;
+}
 
-    let src = (500, 0);
+fn part_two() {
+    let paths = read_paths();
+    let mut taken = initialize_rock_positions(&paths);
+    let floor_y = taken.iter().map(|pt| pt.y).max().unwrap() + 2;
 
+    let is_floor = |pos: Point2| pos.y == floor_y;
+    let src = Point2 { x: 500, y: 0 };
+
+    let mut queue = VecDeque::new();
     let mut accumulated_sand = 0;
-    let mut src_blocked = false;
-    loop {
-        let mut sand_coords = src.clone();
-        loop {
-            let down = (sand_coords.0, sand_coords.1 + 1);
-            if !is_floor(down) && !taken.contains(&down) {
-                sand_coords = down;
-                continue;
-            }
-            let down_left = (sand_coords.0 - 1, sand_coords.1 + 1);
-            if !is_floor(down_left) && !taken.contains(&down_left) {
-                sand_coords = down_left;
-                continue;
-            }
-            let down_right = (sand_coords.0 + 1, sand_coords.1 + 1);
-            if !is_floor(down_right) && !taken.contains(&down_right) {
-                sand_coords = down_right;
-                continue;
-            }
 
-            // all taken, sand remains in place
-            taken.insert(sand_coords);
-            accumulated_sand += 1;
-            if sand_coords == src {
-                src_blocked = true;
-            }
+    queue.push_back(src);
+    let directions = [
+        Point2 { x: 0, y: 1 },
+        Point2 { x: -1, y: 1 },
+        Point2 { x: 1, y: 1 },
+    ];
+    while !queue.is_empty() {
+        let curr = queue.pop_front().unwrap();
+        if is_floor(curr) {
             break;
         }
-        if src_blocked {
-            break;
+
+        accumulated_sand += 1;
+
+        for dir in directions {
+            let new_pos = curr + dir;
+
+            if !taken.contains(&new_pos) {
+                taken.insert(new_pos);
+                queue.push_back(new_pos);
+            }
         }
     }
 
@@ -158,5 +135,5 @@ fn part_two() {
 }
 
 fn main() {
-    part_two();
+    part_one();
 }
