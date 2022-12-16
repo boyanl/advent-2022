@@ -1,3 +1,4 @@
+#!/usr/bin/env run-cargo-script
 use self::Element::{Int, List};
 use std::cmp::{self, Ordering};
 use std::io::stdin;
