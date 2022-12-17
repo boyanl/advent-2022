@@ -5,20 +5,16 @@ use std::{
 };
 
 mod util;
-use util::vec2::Point2_64;
-use util::vec2::Vec2_64;
+type Point = util::vec2::Point2<i64>;
 
-use util::vec2::Point2;
-use util::vec2::Vec2;
-
-type Shape = Vec<Point2_64>;
+type Shape = Vec<Point>;
 
 fn parse_shape(s: &Vec<String>) -> Shape {
     let mut result = Vec::new();
     for (i, line) in s.iter().enumerate() {
         for (j, c) in line.chars().enumerate() {
             if c == '#' {
-                result.push(Point2_64 {
+                result.push(Point {
                     x: j as i64,
                     y: (s.len() - i - 1) as i64,
                 });
@@ -29,18 +25,18 @@ fn parse_shape(s: &Vec<String>) -> Shape {
     return result;
 }
 
-fn to_dir(c: char) -> Vec2 {
+fn to_dir(c: char) -> Point {
     match c {
-        '>' => Vec2 { x: 1, y: 0 },
-        '<' => Vec2 { x: -1, y: 0 },
+        '>' => Point::from((1, 0)),
+        '<' => Point::from((-1, 0)),
         _ => todo!(),
     }
 }
 
-fn visualize_state(taken: &HashSet<Point2>, max_y: i32, width: i32) {
-    for y in (0..=max_y).rev() {
-        for x in 0..width {
-            if !taken.contains(&Point2 { x: x, y: y }) {
+fn visualize_state(taken: &HashSet<Point>, max_y: i32, width: i32) {
+    for y in (0..=max_y as i64).rev() {
+        for x in 0..width as i64 {
+            if !taken.contains(&Point::from((x, y))) {
                 print!(".");
             } else {
                 print!("#");
@@ -52,19 +48,19 @@ fn visualize_state(taken: &HashSet<Point2>, max_y: i32, width: i32) {
 
 fn get_shapes() -> Vec<Shape> {
     return [
-        "####",
-        r#".#.
-           ###
-           .#."#,
-        r#"..#
-           ..#
-           ###"#,
-        r#"#
-           #
-           #
-           #"#,
-        r#"##
-           ##"#,
+        r"####",
+        r".#.
+          ###
+          .#.",
+        r"..#
+          ..#
+          ###",
+        r"#
+          #
+          #
+          #",
+        r"##
+          ##",
     ]
     .iter()
     .map(|&shape_str| {
@@ -77,7 +73,7 @@ fn get_shapes() -> Vec<Shape> {
     .collect();
 }
 
-fn read_directions() -> Vec<Vec2> {
+fn read_directions() -> Vec<Point> {
     let mut directions_str = String::new();
     stdin()
         .read_line(&mut directions_str)
@@ -103,7 +99,7 @@ fn relative_heights(s: &Heights) -> Heights {
     return result;
 }
 
-fn simulate_tetris(directions: &Vec<Vec2>, rounds: u64) -> i64 {
+fn simulate_tetris(directions: &Vec<Point>, rounds: u64) -> i64 {
     let shapes: Vec<Shape> = get_shapes();
     let (sx, sy) = (2, 3);
 
@@ -147,7 +143,7 @@ fn simulate_tetris(directions: &Vec<Vec2>, rounds: u64) -> i64 {
             }
 
             let mut can_fall = true;
-            let down = Vec2 { x: 0, y: -1 };
+            let down = Point { x: 0, y: -1 };
             for j in 0..new_shape.len() {
                 let new_pos = new_shape[j] + down;
                 if new_pos.y < 0 || taken.contains(&new_pos) {

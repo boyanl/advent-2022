@@ -3,9 +3,9 @@ use std::collections::{HashSet, VecDeque};
 use std::io::{self, stdin};
 
 mod util;
-pub use util::vec2::Point2;
+type Point = util::vec2::Point2<i32>;
 
-type Path = Vec<Point2>;
+type Path = Vec<Point>;
 
 fn read_paths() -> Vec<Path> {
     let mut result = Vec::new();
@@ -14,7 +14,7 @@ fn read_paths() -> Vec<Path> {
         let mut path = Vec::new();
         for part in line.split(" -> ") {
             let coords_vec: Vec<i32> = part.split(",").map(|p| p.parse::<i32>().unwrap()).collect();
-            path.push(Point2 {
+            path.push(Point {
                 x: coords_vec[0],
                 y: coords_vec[1],
             });
@@ -24,7 +24,7 @@ fn read_paths() -> Vec<Path> {
     return result;
 }
 
-fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point2> {
+fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point> {
     let mut result = HashSet::new();
     for p in paths {
         for i in 0..p.len() - 1 {
@@ -32,7 +32,7 @@ fn initialize_rock_positions(paths: &Vec<Path>) -> HashSet<Point2> {
 
             for x in min(prev.x, curr.x)..=max(prev.x, curr.x) {
                 for y in min(prev.y, curr.y)..=max(prev.y, curr.y) {
-                    result.insert(Point2 { x: x, y: y });
+                    result.insert(Point { x: x, y: y });
                 }
             }
         }
@@ -46,11 +46,11 @@ fn part_one() {
     let mut taken = initialize_rock_positions(&paths);
     let rock_max_y = taken.iter().map(|pt| pt.y).max().unwrap();
 
-    let src = Point2 { x: 500, y: 0 };
+    let src = Point { x: 500, y: 0 };
     let directions = [
-        Point2 { x: 0, y: 1 },
-        Point2 { x: -1, y: 1 },
-        Point2 { x: 1, y: 1 },
+        Point { x: 0, y: 1 },
+        Point { x: -1, y: 1 },
+        Point { x: 1, y: 1 },
     ];
 
     let mut accumulated_sand = 0;
@@ -92,17 +92,17 @@ fn part_two() {
     let mut taken = initialize_rock_positions(&paths);
     let floor_y = taken.iter().map(|pt| pt.y).max().unwrap() + 2;
 
-    let is_floor = |pos: Point2| pos.y == floor_y;
-    let src = Point2 { x: 500, y: 0 };
+    let is_floor = |pos: Point| pos.y == floor_y;
+    let src = Point { x: 500, y: 0 };
 
     let mut queue = VecDeque::new();
     let mut accumulated_sand = 0;
 
     queue.push_back(src);
     let directions = [
-        Point2 { x: 0, y: 1 },
-        Point2 { x: -1, y: 1 },
-        Point2 { x: 1, y: 1 },
+        Point { x: 0, y: 1 },
+        Point { x: -1, y: 1 },
+        Point { x: 1, y: 1 },
     ];
     while !queue.is_empty() {
         let curr = queue.pop_front().unwrap();

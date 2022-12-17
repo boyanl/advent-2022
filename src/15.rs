@@ -6,6 +6,8 @@ use std::io::{self, stdin};
 mod util;
 use util::vec2::Point2;
 
+type Point = util::vec2::Point2<i32>;
+
 #[derive(Debug, Clone, Copy)]
 struct Interval {
     min: i32,
@@ -38,7 +40,7 @@ fn adjoins(i1: Interval, i2: Interval) -> bool {
     return i1.max + 1 == i2.min || i2.max + 1 == i1.min;
 }
 
-fn read_sensors_and_beacons() -> Vec<(Point2, Point2)> {
+fn read_sensors_and_beacons() -> Vec<(Point, Point)> {
     let mut result = Vec::new();
     for line in stdin().lines().map(|l| l.unwrap()) {
         let (mut sx, mut sy, mut bx, mut by) = (0, 0, 0, 0);
