@@ -1,3 +1,9 @@
+#!/usr/bin/env run-cargo-script
+//! ```cargo
+//! [dependencies]
+//! scanf = "1.2.1"
+//! ```
+extern crate scanf;
 use scanf::sscanf;
 use std::cmp::max;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub};
@@ -7,32 +13,37 @@ use std::{
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
-struct Resources {
-    pub ore: i32,
-    pub clay: i32,
-    pub obsidian: i32,
-    pub geode: i32,
-}
+struct Resources([i32; 4]);
 
 fn zero() -> Resources {
-    return Resources {
-        ore: 0,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-    };
+    return Resources([0; 4]);
+}
+
+impl Resources {
+    fn ore(&self) -> i32 {
+        return self.0[0];
+    }
+    fn clay(&self) -> i32 {
+        return self.0[1];
+    }
+    fn obsidian(&self) -> i32 {
+        return self.0[2];
+    }
+    fn geode(&self) -> i32 {
+        return self.0[3];
+    }
 }
 
 impl Add for Resources {
     type Output = Resources;
 
     fn add(self, rhs: Resources) -> Self::Output {
-        return Resources {
-            ore: self.ore + rhs.ore,
-            clay: self.clay + rhs.clay,
-            obsidian: self.obsidian + rhs.obsidian,
-            geode: self.geode + rhs.geode,
-        };
+        return Resources([
+            self[0] + rhs[0],
+            self[1] + rhs[1],
+            self[2] + rhs[2],
+            self[3] + rhs[3],
+        ]);
     }
 }
 
@@ -40,33 +51,28 @@ impl Sub for Resources {
     type Output = Resources;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        return Resources {
-            ore: self.ore - rhs.ore,
-            clay: self.clay - rhs.clay,
-            obsidian: self.obsidian - rhs.obsidian,
-            geode: self.geode - rhs.geode,
-        };
+        return Resources([
+            self[0] - rhs[0],
+            self[1] - rhs[1],
+            self[2] - rhs[2],
+            self[3] - rhs[3],
+        ]);
     }
 }
 
 impl AddAssign for Resources {
     fn add_assign(&mut self, rhs: Resources) {
-        self.ore += rhs.ore;
-        self.clay += rhs.clay;
-        self.obsidian += rhs.obsidian;
-        self.geode += rhs.geode;
+        self[0] += rhs[0];
+        self[1] += rhs[1];
+        self[2] += rhs[2];
+        self[3] += rhs[3];
     }
 }
 
 impl Mul<i32> for Resources {
     type Output = Resources;
     fn mul(self, rhs: i32) -> Self::Output {
-        return Resources {
-            ore: self.ore * rhs,
-            clay: self.clay * rhs,
-            obsidian: self.obsidian * rhs,
-            geode: self.geode * rhs,
-        };
+        return Resources([self[0] * rhs, self[1] * rhs, self[2] * rhs, self[3] * rhs]);
     }
 }
 
@@ -74,44 +80,29 @@ impl Index<usize> for Resources {
     type Output = i32;
 
     fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.ore,
-            1 => &self.clay,
-            2 => &self.obsidian,
-            3 => &self.geode,
-            _ => todo!(),
-        }
+        return &self.0[index];
     }
 }
 
 impl IndexMut<usize> for Resources {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match index {
-            0 => &mut self.ore,
-            1 => &mut self.clay,
-            2 => &mut self.obsidian,
-            3 => &mut self.geode,
-            _ => todo!(),
-        }
+        return &mut self.0[index];
     }
 }
 
 fn piecewise_max(r1: Resources, r2: Resources) -> Resources {
-    return Resources {
-        ore: max(r1.ore, r2.ore),
-        clay: max(r1.clay, r2.clay),
-        obsidian: max(r1.obsidian, r2.obsidian),
-        geode: max(r1.geode, r2.geode),
-    };
+    return Resources([
+        max(r1[0], r2[0]),
+        max(r1[1], r2[1]),
+        max(r1[2], r2[2]),
+        max(r1[3], r2[3]),
+    ]);
 }
 
 #[derive(Debug)]
 struct Blueprint {
     number: i32,
-    ore_robot_cost: Resources,
-    clay_robot_cost: Resources,
-    obsidian_robot_cost: Resources,
-    geode_robot_cost: Resources,
+    robot_costs: [Resources; 4],
 }
 
 fn parse_cost(cost_str: &str) -> Resources {
@@ -121,10 +112,10 @@ fn parse_cost(cost_str: &str) -> Resources {
         let mut resource_type = String::new();
         if sscanf!(part, "{} {}", amount, resource_type).is_ok() {
             match resource_type.as_str() {
-                "ore" => result.ore = amount,
-                "clay" => result.clay = amount,
-                "obsidian" => result.obsidian = amount,
-                "geode" => result.geode = amount,
+                "ore" => result[0] = amount,
+                "clay" => result[1] = amount,
+                "obsidian" => result[2] = amount,
+                "geode" => result[3] = amount,
                 _ => todo!(),
             }
         } else {
@@ -150,10 +141,7 @@ fn read_blueprint() -> Option<Blueprint> {
     if sscanf!(&line, "Blueprint {}: Each ore robot costs {}. Each clay robot costs {}. Each obsidian robot costs {}. Each geode robot costs {}.", n, ore_cost, clay_cost, obsidian_cost, geode_cost).is_ok() {
         return Some(Blueprint {
             number: n,
-            ore_robot_cost: parse_cost(&ore_cost),
-            clay_robot_cost: parse_cost(&clay_cost),
-            obsidian_robot_cost: parse_cost(&obsidian_cost),
-            geode_robot_cost: parse_cost(&geode_cost)
+            robot_costs: [parse_cost(&ore_cost), parse_cost(&clay_cost), parse_cost(&obsidian_cost), parse_cost(&geode_cost)]
         });
     } else {
             return None;
@@ -177,25 +165,10 @@ fn blueprint_quality(b: &Blueprint, t: i32) -> i32 {
 }
 
 fn max_geodes(b: &Blueprint, t: i32) -> i32 {
-    let initial_resources = Resources {
-        ore: 0,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-    };
-    let initial_income = Resources {
-        ore: 1,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-    };
-    let costs = [
-        b.ore_robot_cost,
-        b.clay_robot_cost,
-        b.obsidian_robot_cost,
-        b.geode_robot_cost,
-    ];
-    let max_requirements = costs
+    let initial_resources = zero();
+    let initial_income = Resources([1, 0, 0, 0]);
+    let max_requirements = b
+        .robot_costs
         .iter()
         .copied()
         .reduce(|cost1, cost2| piecewise_max(cost1, cost2))
@@ -223,22 +196,17 @@ fn max_geodes_internal(
     cache: &mut HashMap<(i32, Resources, Resources), i32>,
 ) -> i32 {
     if t == 0 {
-        return resources.geode;
+        return resources.geode();
     }
     let key = (t, resources, income);
     if cache.contains_key(&key) {
         return cache[&key];
     }
 
-    let mut result = resources.geode + t * income.geode;
+    let mut result = resources.geode() + t * income.geode();
     let mut current_best = best_so_far;
     for i in 0..4 {
-        let next_robot_cost = [
-            b.ore_robot_cost,
-            b.clay_robot_cost,
-            b.obsidian_robot_cost,
-            b.geode_robot_cost,
-        ][i];
+        let next_robot_cost = b.robot_costs[i];
         let mut robot_income = zero();
         robot_income[i] = 1;
 
@@ -251,19 +219,19 @@ fn max_geodes_internal(
         let need = next_robot_cost - resources;
         let mut can_buy = true;
         let mut turns_required = 0;
-        for (r, income_r) in [
-            (need.ore, income.ore),
-            (need.clay, income.clay),
-            (need.obsidian, income.obsidian),
-        ] {
-            if r > 0 && income_r == 0 {
+        for j in 0..4 {
+            let (need_r, income_r) = (need[j], income[j]);
+            if need_r > 0 && income_r == 0 {
                 can_buy = false;
                 break;
             }
-            if r <= 0 {
+            if need_r <= 0 {
                 continue;
             }
-            turns_required = max(turns_required, r / income_r + (r % income_r != 0) as i32);
+            turns_required = max(
+                turns_required,
+                need_r / income_r + (need_r % income_r != 0) as i32,
+            );
         }
 
         if !can_buy {
@@ -272,7 +240,7 @@ fn max_geodes_internal(
 
         if t >= turns_required + 1 {
             // Score estimate is done by assuming we can buy a geode robot for each turn until we run out of time
-            let score_estimate = resources.geode + income.geode * t + (t * (t - 1)) / 2;
+            let score_estimate = resources.geode() + income.geode() * t + (t * (t - 1)) / 2;
             if score_estimate <= best_so_far {
                 continue;
             }
