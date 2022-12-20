@@ -1,19 +1,19 @@
-use std::collections::HashMap;
+#!/usr/bin/env run-cargo-script
 use std::io::{self, stdin};
 
 fn mix(ns: &Vec<i64>, rounds: u32) -> Vec<i64> {
-    let mut result: Vec<(usize, i64)> = ns.iter().enumerate().map(|(i, &x)| (i, x)).collect();
-    let mod_len = (ns.len() - 1) as i64;
+    let mut result = ns
+        .iter()
+        .enumerate()
+        .map(|(i, &x)| (i, x))
+        .collect::<Vec<_>>();
     for _ in 0..rounds {
         for (i, &x) in ns.iter().enumerate() {
-            let len = ns.len();
-            let amount = x.rem_euclid(mod_len) as usize;
-            let s = result.iter().position(|&el| el == (i, x)).unwrap();
+            let element_pos = result.iter().position(|&el| el == (i, x)).unwrap();
+            let el = result.remove(element_pos);
+            let amount = x.rem_euclid(result.len() as i64) as usize;
 
-            for j in 1..=amount {
-                result[(s + j - 1) % len] = result[(s + j) % len];
-            }
-            result[(s + amount) % len] = (i, x);
+            result.insert((element_pos + amount) % result.len(), el);
         }
     }
 
