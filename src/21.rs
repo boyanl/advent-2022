@@ -1,3 +1,9 @@
+#!/usr/bin/env run-cargo-script
+//! ```cargo
+//! [dependencies]
+//! scanf = "1.2.1"
+//! ```
+extern crate scanf;
 use self::JobType::{Number, ResultOf};
 use scanf::sscanf;
 use std::{collections::HashMap, io::stdin};
@@ -21,34 +27,6 @@ fn eval(monkeys: &HashMap<String, JobType>, monkey: &str) -> i64 {
     };
 }
 
-fn eval_override(monkeys: &HashMap<String, JobType>, monkey: &str, human_override: i64) -> f64 {
-    if monkey == "humn" {
-        return human_override as f64;
-    }
-    return match &monkeys[monkey] {
-        Number(n) => *n as f64,
-        ResultOf(op, m1, m2) => match op {
-            '-' => {
-                eval_override(monkeys, m1.as_str(), human_override)
-                    - eval_override(monkeys, m2.as_str(), human_override)
-            }
-            '+' => {
-                eval_override(monkeys, m1.as_str(), human_override)
-                    + eval_override(monkeys, m2.as_str(), human_override)
-            }
-            '/' => {
-                eval_override(monkeys, m1.as_str(), human_override)
-                    / eval_override(monkeys, m2.as_str(), human_override)
-            }
-            '*' => {
-                eval_override(monkeys, m1.as_str(), human_override)
-                    * eval_override(monkeys, m2.as_str(), human_override)
-            }
-            _ => todo!(),
-        },
-    };
-}
-
 fn find_human(monkeys: &HashMap<String, JobType>, from_monkey: &str) -> bool {
     if from_monkey == "humn" {
         return true;
@@ -59,44 +37,68 @@ fn find_human(monkeys: &HashMap<String, JobType>, from_monkey: &str) -> bool {
     };
 }
 
-fn find_x_binary_search(monkeys: &HashMap<String, JobType>) -> i64 {
+fn find_value_for_equality(monkeys: &HashMap<String, JobType>) -> i64 {
     if let ResultOf(_, m1, m2) = &monkeys["root"] {
         let human_left = find_human(monkeys, m1.as_str());
-        let human_right = find_human(monkeys, m2.as_str());
+        let target_monkey = if human_left { m2 } else { m1 };
+        let other_monkey = if human_left { m1 } else { m2 };
 
-        let target;
-        let branch_with_human;
-        if human_left {
-            target = eval(&monkeys, m2);
-            branch_with_human = m1;
-        } else if human_right {
-            target = eval(&monkeys, m1);
-            branch_with_human = m2;
-        } else {
-            todo!();
-        }
-
-        let target = target as f64;
-        let (mut lo, mut hi) = (i64::MIN / 100, i64::MAX / 100);
-        let v1 = eval_override(monkeys, &branch_with_human, lo);
-        let v2 = eval_override(monkeys, &branch_with_human, hi);
-        let ascending = v1 < v2;
-
-        while lo < hi {
-            let x = (lo + hi) / 2;
-            let guess = eval_override(&monkeys, &branch_with_human, x);
-            if guess == target {
-                return x;
-            }
-            if (guess < target && ascending) || (guess > target && !ascending) {
-                lo = x + 1;
-            } else if (guess > target && ascending) || (guess < target && !ascending) {
-                hi = x;
-            }
-        }
-        return hi;
+        let target = eval(&monkeys, &target_monkey);
+        return find_value_for_equality_internal(monkeys, other_monkey, target);
     }
-    todo!();
+    return 0;
+}
+
+fn find_value_for_equality_internal(
+    monkeys: &HashMap<String, JobType>,
+    root: &str,
+    target: i64,
+) -> i64 {
+    if root == "humn" {
+        return target;
+    }
+    match &monkeys[root] {
+        Number(n) => {
+            if *n == target {
+                return target;
+            } else {
+                todo!();
+            }
+        }
+        ResultOf(op, m1, m2) => {
+            let human_left = find_human(&monkeys, m1.as_str());
+            let other_val = if human_left {
+                eval(monkeys, m2)
+            } else {
+                eval(monkeys, m1)
+            };
+            let next_target = match *op {
+                '+' => target - other_val,
+                '-' => {
+                    if human_left {
+                        target + other_val
+                    } else {
+                        other_val - target
+                    }
+                }
+                '*' => target / other_val,
+                '/' => {
+                    if human_left {
+                        other_val * target
+                    } else {
+                        other_val / target
+                    }
+                }
+                _ => todo!(),
+            };
+
+            return find_value_for_equality_internal(
+                monkeys,
+                if human_left { m1 } else { m2 },
+                next_target,
+            );
+        }
+    }
 }
 
 fn parse_monkeys() -> HashMap<String, JobType> {
@@ -131,7 +133,7 @@ fn part_one() {
 
 fn part_two() {
     let monkey_map = parse_monkeys();
-    let result = find_x_binary_search(&monkey_map);
+    let result = find_value_for_equality(&monkey_map);
     println!("{result}");
 }
 
